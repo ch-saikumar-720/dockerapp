@@ -15,4 +15,4 @@ jobs:
       - name: Build Docker Image
         run: docker build -t secondimage .
       - name: Run the docker image
-        run: docker run -d -p secondimage
+        run: docker run -d secondimage
