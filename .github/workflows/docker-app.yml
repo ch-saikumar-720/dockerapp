@@ -13,6 +13,6 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Build Docker Image
-        run: docker build -t firstimage .
+        run: docker build -t secondimage .
       - name: Run the docker image
-        run: docker run -d -p 5000:5000 firstimage
+        run: docker run -d -p secondimage
