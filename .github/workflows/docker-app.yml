@@ -1,18 +1,47 @@
-name: Python Flask Docker
+name: Deploy to AWS EKS
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
 jobs:
-  docker-build:
+  deploy:
+    name: Build and Deploy Flask App
     runs-on: ubuntu-latest
+    env:
+      AWS_REGION: ${{ secrets.AWS_REGION }}
+      ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+      ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+      EKS_CLUSTER_NAME: ${{ secrets.EKS_CLUSTER_NAME }}
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout source
+      uses: actions/checkout@v3
 
-      - name: Build Docker Image
-        run: docker build -t testimage .
-   cluster-login:
-    
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag and push image to ECR
+      run: |
+        docker build -t $ECR_REPOSITORY .
+        docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+
+    - name: Install kubectl
+      uses: azure/setup-kubectl@v3
+
+    - name: Update kubeconfig for EKS
+      run: aws eks update-kubeconfig --region $AWS_REGION --name $EKS_CLUSTER_NAME
+
+    - name: Deploy to EKS
+      run: |
+        sed -i "s|<ECR_REGISTRY>/<ECR_REPOSITORY>:latest|$ECR_REGISTRY/$ECR_REPOSITORY:latest|" deployment.yaml
+        kubectl apply -f deployment.yaml
+        kubectl apply -f service.yaml
