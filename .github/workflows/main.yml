@@ -2,6 +2,25 @@ name: Terraform Destroy
 
 on:
   workflow_dispatch:
+   inputs:
+      env:
+        description: "Select environment"
+        required: true
+        default: "dev"
+        type: choice
+        options:
+          - dev
+          - test
+          - prod
+      region:
+        description: "Select AWS region"
+        required: true
+        default: "us-east-1"
+        type: choice
+        options:
+          - us-east-1
+          - us-west-2
+          - us-east-2
 
 jobs:
    destroy:
