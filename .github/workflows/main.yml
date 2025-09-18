@@ -1,0 +1,35 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+
+jobs:
+   destroy:
+     runs-on: ubuntu-latest
+
+     steps:
+       - name: Checkout repository
+         uses: actions/checkout@v4
+
+       - name: Configure AWS credentials
+         uses: aws-actions/configure-aws-credentials@v3
+         with:
+           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+           aws-region: ${{ env.AWS_REGION }}
+
+       - name: Terraform Init
+         run: |
+          cd iac_tf
+          terraform init -reconfigure \
+            -backend-config="bucket=my-terraform-state-us-east1-unique" \
+            -backend-config="key=terraform/terraform.tfstate" \
+            -backend-config="region=${AWS_REGION}" \
+            -backend-config="encrypt=true"
+        
+       - name: Terraform Destroy
+         run: |
+          cd iac_tf
+          terraform destroy
+         
+       
